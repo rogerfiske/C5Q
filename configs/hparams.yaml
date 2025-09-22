@@ -1,0 +1,97 @@
+# C5Q Hyperparameters Configuration
+
+# Global settings
+seed: 42
+project_name: "c5q-quantum-modeling"
+
+# Dataset configuration
+data:
+  window_size: 128           # Context window for sequence modeling
+  stride: 1                  # Training sample stride
+  val_stride: 10            # Validation sample stride (larger for efficiency)
+  train_ratio: 0.8          # Train/validation split ratio
+  prediction_horizon: 1     # Number of future events to predict
+
+# Model architecture
+model:
+  encoder:
+    type: "itransformer"     # Encoder type: itransformer, standard
+    d_model: 256             # Model dimension
+    n_heads: 8               # Number of attention heads
+    n_layers: 4              # Number of transformer layers
+    ff_mult: 4               # Feed-forward multiplier
+    dropout: 0.1             # Dropout rate
+
+  npl:
+    use_bucket_bias: true    # Enable bucket conditioning
+    bucket_mode: "k6"        # Bucket mode: k4, k5, k6, manual
+
+  diffusion:
+    steps: 200               # Number of diffusion steps
+    noise_schedule: "cosine" # Noise schedule: linear, cosine
+    guidance_scale: 0.0      # Classifier-free guidance scale
+
+# Training configuration
+training:
+  batch_size: 32             # Batch size for training
+  val_batch_size: 64         # Batch size for validation
+  epochs: 50                 # Maximum number of epochs
+  early_stopping_patience: 10 # Early stopping patience
+
+  optimizer:
+    type: "adamw"            # Optimizer: adam, adamw, sgd
+    lr: 2.5e-4              # Learning rate
+    weight_decay: 1.0e-4     # Weight decay
+    betas: [0.9, 0.999]      # Adam betas
+
+  scheduler:
+    type: "cosine"           # LR scheduler: cosine, step, plateau
+    warmup_steps: 1000       # Warmup steps for cosine schedule
+
+  gradient:
+    clip_norm: 1.0           # Gradient clipping norm
+    accumulation_steps: 1    # Gradient accumulation steps
+
+# Loss configuration
+loss:
+  type: "pl_ce"              # Loss type: pl_ce (Plackett-Luce + CE)
+  bottom20_weight: 3.0       # Weight for bottom-20 predictions
+  label_smoothing: 0.01      # Label smoothing factor
+  focal_alpha: 0.25          # Focal loss alpha (if using focal)
+  focal_gamma: 2.0           # Focal loss gamma (if using focal)
+
+# Evaluation configuration
+evaluation:
+  metrics:
+    - "precision_at_20"      # Precision@20 for least-20
+    - "recall_at_20"         # Recall@20 for least-20
+    - "brier_score"          # Brier score for calibration
+    - "nll"                  # Negative log-likelihood
+    - "calibration_error"    # Expected calibration error
+
+  save_predictions: true     # Save prediction outputs
+  generate_plots: true       # Generate evaluation plots
+
+# Hardware configuration
+compute:
+  device: "auto"             # Device: auto, cpu, cuda
+  mixed_precision: true      # Enable mixed precision training
+  num_workers: 0             # DataLoader workers (0 for main process only)
+  pin_memory: true           # Pin memory for faster GPU transfer
+
+# Logging and checkpointing
+logging:
+  level: "INFO"              # Logging level
+  log_interval: 100          # Steps between training logs
+  save_interval: 5           # Epochs between checkpoints
+  max_checkpoints: 5         # Maximum checkpoints to keep
+
+# Reproducibility
+reproducibility:
+  deterministic: true        # Enable deterministic operations
+  benchmark: false           # Disable cudnn benchmark for reproducibility
+
+# Bucket configuration (for manual override)
+buckets:
+  manual_enabled: false      # Enable manual bucket configuration
+  # manual_buckets will be loaded from buckets.manual.yaml if enabled
